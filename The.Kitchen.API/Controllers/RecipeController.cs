@@ -1,5 +1,6 @@
 ﻿using The.Kitchen.Domain.Models;
 using Microsoft.AspNetCore.Mvc;
+using The.Kitchen.DomainLogic.Constant;
 
 namespace The.Kitchen.API.Controllers
 {
@@ -16,6 +17,10 @@ namespace The.Kitchen.API.Controllers
         [HttpGet]
         public IActionResult Get()
         {
+            if (!_config.ReceipeConfigs.Any())
+            {
+                return BadRequest(LoggingMessageConstants.MISSING_CONFIG);
+            }
             return Ok(_config.ReceipeConfigs);
         }
     }

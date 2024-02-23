@@ -15,6 +15,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\The.Kitchen.DomainLogic\The.Kitchen.DomainLogic.csproj" />
     <ProjectReference Include="..\The.Kitchen.Domain\The.Kitchen.Domain.csproj" />
   </ItemGroup>
 

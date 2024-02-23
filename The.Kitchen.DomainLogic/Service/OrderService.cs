@@ -16,15 +16,21 @@ namespace The.Kitchen.DomainLogic.Service
         {
             var response = new OrderResponse()
             {
-                OriginalIngrediants = ingredient ?? new Dictionary<string, int>(),
+                // Validate that the dictionary key is not case sensitive
+                OriginalIngrediants = ingredient != null 
+                                       ? new Dictionary<string, int>(dictionary: ingredient, comparer: StringComparer.InvariantCultureIgnoreCase) 
+                                       : new Dictionary<string, int>(),
             };
 
             try
             {
+                // Check if requst is valid
                 if (IsValidRequest(response))
                 {
+                    // Validate that there is a valid Recipe Configuration available
                     if (_config.ReceipeConfigs != null && _config.ReceipeConfigs.Count() > 0)
                     {
+                        // Copy of
                         var ingrediantsRemaining = response.OriginalIngrediants;
                         var canProcessIngrediants = true;
                         while (canProcessIngrediants)
@@ -32,25 +38,48 @@ namespace The.Kitchen.DomainLogic.Service
                             var receipeFound = await GetReceipeBasedOnIngrediants(ingrediantsRemaining);
                             if (receipeFound != null)
                             {
-                                if (true)
+                                // Check if Recipe Found was already selected
+                                if (response.Orders.ContainsKey(receipeFound.Name))
                                 {
+                                    response.Orders[receipeFound.Name] += receipeFound.Feeds;
+                                }
+                                // Simply add the recipe to the order
+                                else
+                                {
+                                    response.Orders.Add(receipeFound.Name, receipeFound.Feeds);
+                                }
 
+                                // Deduct Recipe Consumptions from Ingrediants
+                                foreach (var ingredientUsed in receipeFound.Ingredients)
+                                {
+                                    // Validate that we are only removing ingradient we DO have in stock.
+                                    if (ingrediantsRemaining[ingredientUsed.Key] - ingredientUsed.Value >= 0)
+                                    {
+                                        ingrediantsRemaining[ingredientUsed.Key] -= ingredientUsed.Value;
+                                    }
+                                    else // Throw error that something went wrong with the GetReceipeBasedOnIngrediants functionality (LAST RESORT BACKUP CHECK)
+                                    {
+                                        response.Errors.Add($"An error occurred attempting to deduct ingradient {ingredientUsed.Key} with a value from {ingredientUsed.Value.ToString()}");
+                                        canProcessIngrediants = false;
+                                    }
                                 }
                             }
-                            else
+                            else // We are done with the ingrediants, not enough ingredients to fulfill recipe/s
                             {
                                 canProcessIngrediants = false;
                             }
                         }
+                        // Display any left over ingredients, if any
                         response.LeftOverIngrediants = ingrediantsRemaining.Where(i => i.Value > 0).ToDictionary();
                     }
-                    else
+                    else // Config is missing, please add recipes to API -> AppSettings.JSON
                     {
                         response.Errors.Add(LoggingMessageConstants.MISSING_CONFIG);
                         _logger.LogWarning(LoggingMessageConstants.MISSING_CONFIG);
                     }
                 }
             }
+            // Generic Exception Handling done here
             catch (Exception ex)
             {
                 _logger.LogError(ex, LoggingMessageConstants.GENERIC_ERROR);
@@ -59,11 +88,26 @@ namespace The.Kitchen.DomainLogic.Service
             return response;
         }
 
-        private async Task<RecipeBase> GetReceipeBasedOnIngrediants(Dictionary<string, int> ingredient)
+        private Task<RecipeBase> GetReceipeBasedOnIngrediants(Dictionary<string, int> ingredientRemaining)
         {
+            if (ingredientRemaining.Any(i => i.Value > 0))
+            {
+                
+            }
+            var recipesCanMake = 
+                _config
+                 .ReceipeConfigs
+                 .Where(recipe =>
+                     recipe.Ingredients.Intersect(ingredientRemaining).Count() > 0
+                 );
 
-
-            return null;
+            // When we do have a recipe we matched, use the one that can feed most people first, then by name (just becuase I want to)
+            if (recipesCanMake.Any())
+            {
+                return Task.FromResult<RecipeBase>(recipesCanMake.OrderByDescending(r => r.Feeds).ThenBy(r2 => r2.Name).First());
+            }
+            // No Recipe found to return null
+            return Task.FromResult<RecipeBase>(null);
         }
 
         private bool IsValidRequest(OrderResponse response)
@@ -77,7 +121,7 @@ namespace The.Kitchen.DomainLogic.Service
             else if (!response.OriginalIngrediants.Any(i => i.Value > 0))
             {
                 response.Errors.Add(LoggingMessageConstants.INGREDIENT_AMOUNT_TO_LITTLE);
-                _logger.LogInformation(LoggingMessageConstants.INGREDIENT_AMOUNT_TO_LITTLE, response.OriginalIngrediants);
+                _logger.LogInformation(LoggingMessageConstants.INGREDIENT_AMOUNT_TO_LITTLE, [ response.OriginalIngrediants ]);
                 return false;
             }
 

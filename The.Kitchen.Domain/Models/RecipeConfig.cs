@@ -1,10 +1,12 @@
-﻿namespace The.Kitchen.Domain.Models
+﻿using The.Kitchen.Domain.Models.Base;
+
+namespace The.Kitchen.Domain.Models
 {
-    public class RecipeConfig(IEnumerable<RecipeConfig> receipeConfig)
+    public class RecipeConfig(IEnumerable<RecipeBase> receipeConfig)
     {
         /// <summary>
         /// Configuration injected from Program.cs / Startup
         /// </summary>
-        public IEnumerable<RecipeConfig> ReceipeConfigs { get; private set; } = receipeConfig;
+        public List<RecipeBase> ReceipeConfigs { get; private set; } = receipeConfig.ToList();
     }
 }

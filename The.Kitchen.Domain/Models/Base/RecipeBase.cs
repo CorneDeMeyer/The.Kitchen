@@ -8,7 +8,7 @@
         public required string Name { get; set; }
 
         /// <summary>
-        /// How many people will this ingradiants feed
+        /// How many people will this ingradients feed
         /// </summary>
         public required int Feeds { get; set; }
 
