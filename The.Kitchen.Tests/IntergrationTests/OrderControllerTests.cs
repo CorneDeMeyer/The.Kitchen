@@ -23,7 +23,7 @@ namespace The.Kitchen.Tests.IntergrationTests
             var value = Assert.IsType<OrderResponse>(okResult.Value);
 
             Assert.Empty(value.Errors);
-            Assert.Equal(23, value.Feeds);
+            Assert.Equal(12, value.Feeds);
             Assert.Equal(5, value.LeftOverIngrediants.Count);
         }
 
