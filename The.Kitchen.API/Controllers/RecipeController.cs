@@ -1,6 +1,7 @@
 ﻿using The.Kitchen.Domain.Models;
 using Microsoft.AspNetCore.Mvc;
 using The.Kitchen.DomainLogic.Constant;
+using The.Kitchen.Domain.Models.Base;
 
 namespace The.Kitchen.API.Controllers
 {
@@ -15,7 +16,7 @@ namespace The.Kitchen.API.Controllers
         /// </summary>
         /// <returns>Current Receipes List</returns>
         [HttpGet]
-        public IActionResult Get()
+        public ActionResult<List<RecipeBase>> Get()
         {
             if (!_config.ReceipeConfigs.Any())
             {

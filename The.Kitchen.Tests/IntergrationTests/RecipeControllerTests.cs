@@ -1,33 +1,31 @@
-﻿using The.Kitchen.Tests.SetupService;
+﻿using Microsoft.AspNetCore.Mvc;
 using The.Kitchen.API.Controllers;
-using The.Kitchen.Tests.FakeData;
-using Microsoft.AspNetCore.Mvc;
 using The.Kitchen.Domain.Models;
+using The.Kitchen.Domain.Models.Base;
+using The.Kitchen.Tests.FakeData;
 
 namespace The.Kitchen.Tests.IntergrationTests
 {
     public class RecipeControllerTests
     {
-        [Fact(DisplayName = "Place an Order - Success")]
-        public async Task Place_Order_Test_Success()
+        [Fact(DisplayName = "Get Recipe Configuration - Success")]
+        public void GetConfig_Success()
         {
-            var controller = GetController();
+            var controller = GetController;
 
-            var result = await controller.PlaceOrder(FakeIngredients.GetIngredients);
+            var result = controller.Get();
             var resultObject = result.Result;
 
             Assert.NotNull(controller);
             Assert.NotNull(result);
 
             var okResult = Assert.IsType<OkObjectResult>(resultObject);
-            var value = Assert.IsType<OrderResponse>(okResult.Value);
+            var value = Assert.IsType<List<RecipeBase>>(okResult.Value);
 
-            Assert.Empty(value.Errors);
-            Assert.Equal(23, value.Feeds);
-            Assert.Equal(5, value.LeftOverIngrediants.Count);
+            Assert.NotEmpty(value);
+
         }
 
-
-        private OrderController GetController() => new OrderController(SetupOrderService.GetService);
+        private RecipeController GetController => new RecipeController(FakeRecipeConfig.GetConfig);
     }
 }
