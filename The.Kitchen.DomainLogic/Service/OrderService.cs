@@ -1,8 +1,8 @@
 ﻿using The.Kitchen.DomainLogic.Interface;
+using The.Kitchen.DomainLogic.Constant;
+using The.Kitchen.Domain.Models.Base;
 using Microsoft.Extensions.Logging;
 using The.Kitchen.Domain.Models;
-using The.Kitchen.Domain.Models.Base;
-using The.Kitchen.DomainLogic.Constant;
 
 namespace The.Kitchen.DomainLogic.Service
 {
@@ -35,7 +35,7 @@ namespace The.Kitchen.DomainLogic.Service
                         var canProcessIngrediants = true;
                         while (canProcessIngrediants)
                         {
-                            var receipeFound = await GetReceipeBasedOnIngrediants(ingrediantsRemaining);
+                            var receipeFound = await GetReceipeBasedOnIngredients(ingrediantsRemaining);
                             if (receipeFound != null)
                             {
                                 // Check if Recipe Found was already selected
@@ -59,8 +59,8 @@ namespace The.Kitchen.DomainLogic.Service
                                     }
                                     else // Throw error that something went wrong with the GetReceipeBasedOnIngrediants functionality (LAST RESORT BACKUP CHECK)
                                     {
-                                        response.Errors.Add($"An error occurred attempting to deduct ingradient {ingredientUsed.Key} with a value from {ingredientUsed.Value.ToString()}");
                                         canProcessIngrediants = false;
+                                        break;
                                     }
                                 }
                             }
@@ -88,24 +88,41 @@ namespace The.Kitchen.DomainLogic.Service
             return response;
         }
 
-        private Task<RecipeBase> GetReceipeBasedOnIngrediants(Dictionary<string, int> ingredientRemaining)
+        private Task<RecipeBase> GetReceipeBasedOnIngredients(Dictionary<string, int> ingredientRemaining)
         {
             if (ingredientRemaining.Any(i => i.Value > 0))
             {
-                
-            }
-            var recipesCanMake = 
-                _config
-                 .ReceipeConfigs
-                 .Where(recipe =>
-                     recipe.Ingredients.Intersect(ingredientRemaining).Count() > 0
-                 );
+                var recipesCanMake = new List<RecipeBase>();
 
-            // When we do have a recipe we matched, use the one that can feed most people first, then by name (just becuase I want to)
-            if (recipesCanMake.Any())
-            {
-                return Task.FromResult<RecipeBase>(recipesCanMake.OrderByDescending(r => r.Feeds).ThenBy(r2 => r2.Name).First());
+                // Go through each Recipe
+                foreach (var recipe in _config.ReceipeConfigs)
+                {
+                    var hasAllIngrediants = true;
+                    // Iterate through ingrediants required
+                    foreach (var ingredient in recipe.Ingredients)
+                    {
+                        // Check the ingrediant exists and there is enough to make recipe
+                        if (ingredientRemaining.ContainsKey(ingredient.Key) 
+                         && ingredientRemaining[ingredient.Key] > 0
+                         && ingredientRemaining[ingredient.Key] - ingredientRemaining[ingredient.Key] < 0)
+                        {
+                            hasAllIngrediants = false;
+                        }
+                    }
+
+                    if (hasAllIngrediants)
+                    {
+                        recipesCanMake.Add(recipe);
+                    }
+                }
+
+                // When we do have a recipe we matched, use the one that can feed most people first, then by name (just becuase I want to)
+                if (recipesCanMake.Any())
+                {
+                    return Task.FromResult<RecipeBase>(recipesCanMake.OrderByDescending(r => r.Feeds).ThenBy(r2 => r2.Name).First());
+                }
             }
+            
             // No Recipe found to return null
             return Task.FromResult<RecipeBase>(null);
         }

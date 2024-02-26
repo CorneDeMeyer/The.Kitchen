@@ -13,7 +13,7 @@ namespace The.Kitchen.API.Controllers
         /// <summary>
         /// Current Receipes that can be used to determine what food order can feed as many people as possible
         /// </summary>
-        /// <returns>Current Receipes</returns>
+        /// <returns>Current Receipes List</returns>
         [HttpGet]
         public IActionResult Get()
         {
